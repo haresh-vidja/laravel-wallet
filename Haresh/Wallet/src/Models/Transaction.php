@@ -2,13 +2,22 @@
 namespace Haresh\Wallet\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Class Transaction
  * 
- * Represents a single credit or debit in the wallet.
+ * Represents a wallet transaction with rollback, reference ID, and metadata support.
  */
 class Transaction extends Model
 {
-    protected $fillable = ['wallet_id', 'amount', 'type', 'description'];
+    use SoftDeletes;
+
+    protected $fillable = [
+        'wallet_id', 'amount', 'type', 'description', 'meta', 'reference', 'status'
+    ];
+
+    protected $casts = [
+        'meta' => 'array'
+    ];
 }

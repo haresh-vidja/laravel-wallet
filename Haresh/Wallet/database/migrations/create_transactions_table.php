@@ -6,8 +6,8 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Migration: CreateTransactionsTable
- *
- * Creates the `transactions` table to store wallet credit/debit logs.
+ * 
+ * Adds reference UUID, metadata JSON, and status (pending/approved/rejected).
  */
 return new class extends Migration
 {
@@ -19,7 +19,11 @@ return new class extends Migration
             $table->decimal('amount', 12, 2);
             $table->enum('type', ['credit', 'debit']);
             $table->string('description')->nullable();
+            $table->json('meta')->nullable(); // Extra structured info (order ID, etc.)
+            $table->uuid('reference')->unique(); // Unique transaction reference
+            $table->enum('status', ['pending', 'approved', 'rejected'])->default('approved');
             $table->timestamps();
+            $table->softDeletes(); // Enable soft deletes for audit trails
         });
     }
 
