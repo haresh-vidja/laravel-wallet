@@ -154,7 +154,3 @@ app('wallet')->credit($wallet, 100, 'Referral Bonus');
 ### Author
 **Haresh Vidja**
 Custom Laravel Wallet System for flexible financial management.
-
----
-### License
-This package is open-source and free to use in Laravel applications.
