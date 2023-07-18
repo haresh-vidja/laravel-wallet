@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * Class Transaction
  * 
- * Represents a wallet transaction with rollback, reference ID, and metadata support.
+ * Refers to a specific wallet via wallet_id. Carries unique reference.
  */
 class Transaction extends Model
 {

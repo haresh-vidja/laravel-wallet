@@ -7,15 +7,12 @@ use Haresh\Wallet\Models\Transaction;
 /**
  * Class Wallet
  * 
- * Represents the wallet associated with a user.
+ * Represents a standalone wallet not tied to a user by foreign key.
  */
 class Wallet extends Model
 {
-    protected $fillable = ['user_id', 'balance'];
+    protected $fillable = ['type', 'balance'];
 
-    /**
-     * Relationship: A wallet has many transactions.
-     */
     public function transactions()
     {
         return $this->hasMany(Transaction::class);

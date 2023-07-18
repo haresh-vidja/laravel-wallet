@@ -6,8 +6,8 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Migration: CreateTransactionsTable
- * 
- * Adds reference UUID, metadata JSON, and status (pending/approved/rejected).
+ *
+ * Transactions are linked to wallets and store transaction-level metadata.
  */
 return new class extends Migration
 {
@@ -19,11 +19,11 @@ return new class extends Migration
             $table->decimal('amount', 12, 2);
             $table->enum('type', ['credit', 'debit']);
             $table->string('description')->nullable();
-            $table->json('meta')->nullable(); // Extra structured info (order ID, etc.)
+            $table->json('meta')->nullable();
             $table->uuid('reference')->unique(); // Unique transaction reference
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('approved');
             $table->timestamps();
-            $table->softDeletes(); // Enable soft deletes for audit trails
+            $table->softDeletes();
         });
     }
 

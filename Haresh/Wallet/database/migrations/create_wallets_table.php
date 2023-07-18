@@ -7,7 +7,8 @@ use Illuminate\Support\Facades\Schema;
 /**
  * Migration: CreateWalletsTable
  *
- * Creates the `wallets` table for storing user balances.
+ * Wallets are standalone and not directly tied to users in schema.
+ * Type can represent 'points', 'cash', etc.
  */
 return new class extends Migration
 {
@@ -15,9 +16,11 @@ return new class extends Migration
     {
         Schema::create('wallets', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id')->unique();
+            $table->string('type'); // 'cash', 'points', etc.
             $table->decimal('balance', 12, 2)->default(0);
             $table->timestamps();
+
+            $table->unique('type'); // Optional: one wallet per type globally
         });
     }
 

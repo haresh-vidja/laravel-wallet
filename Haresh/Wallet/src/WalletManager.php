@@ -6,25 +6,20 @@ use Haresh\Wallet\Models\Transaction;
 use Illuminate\Support\Str;
 
 /**
- * Class WalletManager
+ * WalletManager
  * 
- * Handles wallet operations: credit, debit, transfer, rollback, and event handling.
+ * Central handler for transactions on any wallet.
  */
 class WalletManager
 {
-    /**
-     * Credit a user's wallet.
-     */
-    public function credit($user, $amount, $description = null, array $meta = [], $status = 'approved')
+    public function credit(Wallet $wallet, $amount, $description = null, array $meta = [], $status = 'approved')
     {
-        $wallet = $user->wallet ?? Wallet::create(['user_id' => $user->id, 'balance' => 0]);
-
         if ($status === 'approved') {
             $wallet->balance += $amount;
             $wallet->save();
         }
 
-        $wallet->transactions()->create([
+        return $wallet->transactions()->create([
             'amount' => $amount,
             'type' => 'credit',
             'description' => $description,
@@ -32,19 +27,12 @@ class WalletManager
             'reference' => (string) Str::uuid(),
             'status' => $status
         ]);
-
-        return $wallet;
     }
 
-    /**
-     * Debit a user's wallet.
-     */
-    public function debit($user, $amount, $description = null, array $meta = [], $status = 'approved')
+    public function debit(Wallet $wallet, $amount, $description = null, array $meta = [], $status = 'approved')
     {
-        $wallet = $user->wallet;
-
         if ($status === 'approved') {
-            if (!$wallet || $wallet->balance < $amount) {
+            if ($wallet->balance < $amount) {
                 throw new \Exception("Insufficient balance");
             }
 
@@ -52,7 +40,7 @@ class WalletManager
             $wallet->save();
         }
 
-        $wallet->transactions()->create([
+        return $wallet->transactions()->create([
             'amount' => $amount,
             'type' => 'debit',
             'description' => $description,
@@ -60,29 +48,26 @@ class WalletManager
             'reference' => (string) Str::uuid(),
             'status' => $status
         ]);
-
-        return $wallet;
     }
 
-    /**
-     * Transfer money from one user to another.
-     */
-    public function transfer($fromUser, $toUser, $amount, $description = 'Wallet Transfer')
+    public function transfer(Wallet $fromWallet, Wallet $toWallet, $amount, $description = 'Wallet Transfer')
     {
-        $this->debit($fromUser, $amount, "Transfer to User #{$toUser->id}");
-        $this->credit($toUser, $amount, "Transfer from User #{$fromUser->id}");
-
+        $this->debit($fromWallet, $amount, "Transfer to Wallet #{$toWallet->id}");
+        $this->credit($toWallet, $amount, "Transfer from Wallet #{$fromWallet->id}");
         return true;
     }
 
-    /**
-     * Rollback a transaction by creating its opposite.
-     */
     public function rollback(Transaction $transaction)
     {
         $oppositeType = $transaction->type === 'credit' ? 'debit' : 'credit';
-        $user = $transaction->wallet->user;
+        $wallet = $transaction->wallet;
 
-        return $this->{$oppositeType}($user, $transaction->amount, "Rollback of Txn #{$transaction->id}");
+        return $this->{$oppositeType}(
+            $wallet,
+            $transaction->amount,
+            "Rollback of Txn #{$transaction->id}",
+            [],
+            'approved'
+        );
     }
 }
