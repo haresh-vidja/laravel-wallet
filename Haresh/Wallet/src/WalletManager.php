@@ -50,10 +50,10 @@ class WalletManager
         ]);
     }
 
-    public function transfer(Wallet $fromWallet, Wallet $toWallet, $amount, $description = 'Wallet Transfer')
+    public function transfer(Wallet $fromWallet, Wallet $toWallet, $amount, $description = 'Wallet Transfer', array $meta = [] )
     {
-        $this->debit($fromWallet, $amount, "Transfer to Wallet #{$toWallet->id}");
-        $this->credit($toWallet, $amount, "Transfer from Wallet #{$fromWallet->id}");
+        $this->debit($fromWallet, $amount, "Transfer to Wallet #{$toWallet->id}",$meta);
+        $this->credit($toWallet, $amount, "Transfer from Wallet #{$fromWallet->id}",$meta);
         return true;
     }
 

@@ -16,11 +16,10 @@ return new class extends Migration
     {
         Schema::create('wallets', function (Blueprint $table) {
             $table->id();
-            $table->string('type'); // 'cash', 'points', etc.
             $table->decimal('balance', 12, 2)->default(0);
             $table->timestamps();
 
-            $table->unique('type'); // Optional: one wallet per type globally
+           // $table->unique('type'); // Optional: one wallet per type globally
         });
     }
 
