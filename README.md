@@ -2,139 +2,151 @@
 
 This package provides a **modular wallet and transaction system** for Laravel.
 Each wallet is **independent** (not directly linked to users) and supports:
-- ✅ Multiple wallet types (e.g. `cash`, `points`)
-- ✅ Credit, debit, transfer, and rollback operations
-- ✅ UUID-based transaction references
-- ✅ Metadata for each transaction
-- ✅ Soft-deletable transaction logs
+- Multiple wallet types (e.g. `cash`, `points`)
+- Credit, debit, transfer, and rollback operations
+- UUID-based transaction references
+- Metadata for each transaction
+- Soft-deletable transaction logs
 
-### Installation
-1. Copy the package folder to your Laravel app, e.g.:
+## Installation
+
+Here is a **step-by-step guide to install a custom package in Laravel**, whether it's a **local package**, a **private Git repo**, or a **custom path**.
+
+----------
+
+###  Step 1: Organize Your Package Folder
+Create the directory:
+```bash
+mkdir -p packages/Haresh/Wallet
 ```
-packages/Haresh/Wallet
+Example structure:
 ```
-2. Add to `composer.json` autoload:
+packages/
+└── Haresh/
+    └── Wallet/
+```
+----------
+### Step 2: Create `composer.json` for the Package
+
+Inside `packages/CustomVendor/CustomPackage/composer.json`:
 ```json
-"autoload": {
-	"psr-4": {
-		"Haresh\\Wallet\\": "packages/Haresh/Wallet/src/"
-	}
+{
+  "name": "custom-vendor/custom-package",
+  "description": "A custom Laravel package",
+  "autoload": {
+    "psr-4": {
+      "Haresh\\Wallet\\": "src/"
+    }
+  },
+  "require": {}
 }
 ```
-3. Run:
+----------
+###  Step 3: Register the Package in Your Laravel App
+
+In your **Laravel project's `composer.json`**, add:
+
+#### A. Add to `autoload.psr-4` (optional but helpful for IDEs)
+
+```json
+"autoload": {
+  "psr-4": {
+    "App\\": "app/",
+    "Haresh\\Wallet\\": "packages/Haresh/Wallet/src/"
+  }
+}
+```
+### B. Add to `repositories`
+```json
+"repositories": [
+  {
+    "type": "path",
+    "url": "packages/Haresh/Wallet"
+  }
+]
+```
+----------
+
+###  Step 4: Require the Package
+Run:
+```bash
+composer require custom-vendor/custom-package:@dev
+```
+----------
+### Step 5: Register the Service Provider
+If not using Laravel auto-discovery, go to `config/app.php`:
+```php
+'providers' => [
+    Haresh\Wallet\WalletServiceProvider::class,
+],
+```
+----------
+### Step 6: Dump Autoload
+Run:
 ```bash
 composer dump-autoload
 ```
-4. Run the migrations:
+---------
+###  Step 7: Migrate wallet related tables in database
+
+Run:
 ```bash
-php artisan migrate
+php artisan migrate:fresh
 ```
----
-### Concept Overview
--  **Wallet**: Holds a balance and a `type` (e.g. `cash`, `reward`)
--  **Transaction**: Belongs to a wallet, logs every credit or debit with a unique reference
--  **No User Foreign Key**: Wallet-user relation is external/customizable
----
-### Usage Examples
-#### Create a Wallet
+
+#### Code Sample for
 ```php
-use Haresh\Wallet\Models\Wallet;
-$wallet = Wallet::create([
-	'type' => 'cash',
-	'balance' => 0
+// Create user1
+$user1 = User::factory()->create([
+	'name' => 'User1'
 ]);
-```
-#### Credit a Wallet
-```php
-app('wallet')->credit($wallet, 100.00, 'Signup Bonus');
-```
-#### Debit a Wallet
-```php
-app('wallet')->debit($wallet, 50.00, 'Product Purchase');
-```
-#### Transfer Between Wallets
-```php
-app('wallet')->transfer($walletA, $walletB, 20.00);
-```
-#### Rollback a Transaction
-```php
-use Haresh\Wallet\Models\Transaction;
-$txn = Transaction::find(1);
-app('wallet')->rollback($txn);
-```
----
-### Database Tables
-#### `wallets`
-| Column | Type | Description |
-|------------|---------|------------------------|
-| `id` | bigint | Primary key |
-| `type` | string | Wallet type (e.g. cash)|
-| `balance` | decimal | Current balance |
-| `timestamps` | — | Laravel timestamps |
-#### `transactions`
-| Column | Type | Description |
-|--------------|---------|----------------------------------|
-| `wallet_id` | bigint | Linked wallet |
-| `amount` | decimal | Amount credited or debited |
-| `type` | enum | `credit` or `debit` |
-| `description`| string | Optional message |
-| `meta` | json | Extra info (e.g., `order_id`) |
-| `reference` | uuid | Unique transaction reference |
-| `status` | enum | `approved`, `pending`, `rejected`|
-| `softDeletes`| — | Supports rollback and audit |
----
-### Step-by-Step: Assign Multiple Wallets to Users
-#### 1. **Create `user_wallets` Pivot Table**
-Run:
-```bash
-php  artisan  make:migration  create_user_wallets_table
-```
-Then in the migration file:
-```php
-Schema::create('user_wallets', function (Blueprint  $table) {
-	$table->id();
-	$table->foreignId('user_id')->constrained()->onDelete('cascade');
-	$table->foreignId('wallet_id')->constrained()->onDelete('cascade');
-	$table->timestamps();
-	$table->unique(['user_id', 'wallet_id']); // prevent duplicate assignment
-});
-```
-Run:
-```bash
-php  artisan  migrate
-```
----
-#### 2. **Update Your `User` Model**
-```php
-use Haresh\Wallet\Models\Wallet;
-class  User  extends  Authenticatable
-{
-	public  function  wallets(){
-		return  $this->belongsToMany(Wallet::class, 'user_wallets');
-	}
-	// Optional: get wallet by type
-	public  function  getWalletByType($type){
-		return  $this->wallets()->where('type', $type)->first();
-	}
-}
-```
----
-#### 3. **Assign Wallets to Users**
-```php
-$user = User::find(1);
-$wallet = Wallet::create(['type' => 'cash', 'balance' => 0]);
-$user->wallets()->attach($wallet->id);
-```
-Or for multiple:
-```php
-$user->wallets()->sync([$walletId1, $walletId2]);
-```
----
-#### 4. **Get and Use Wallet**
-```php
-$wallet = $user->getWalletByType('points');
-// Use wallet in manager
-app('wallet')->credit($wallet, 100, 'Referral Bonus');
+
+// Device information for user1
+$user1meta=[
+	'device' => 'Android',
+	'ip_address' => fake()->ipv4,
+	'app_version' => 'MyWallet v1.9.0'
+];
+
+// Create wallets
+$walletCash1 = Wallet::create(['balance' => 0]);
+$walletPoints1 = Wallet::create(['balance' => 1000]); // Initial 1000 points
+
+// Attach wallets to user1 with wallet_type in pivot
+$user1->wallets()->attach($walletCash1->id, ['wallet_type' => 'cash']);
+$user1->wallets()->attach($walletPoints1->id, ['wallet_type' => 'points']);
+
+// Create user2 referred by user1
+$user2 = User::factory()->create([
+	'name' => 'User2',
+	'referred_by' => $user1->id
+]);
+
+// Device information for user2
+$user2meta=[
+	'device' => 'iPhone',
+	'ip_address' => fake()->ipv4,
+	'app_version' => 'MyWallet v2.0.2'
+];
+
+// Create wallets for user2
+$walletCash2 = Wallet::create(['balance' => 0]);
+$walletPoints2 = Wallet::create(['balance' => 100]); // Initial 100 points
+
+$user2->wallets()->attach($walletCash2->id, ['wallet_type' => 'cash']);
+$user2->wallets()->attach($walletPoints2->id, ['wallet_type' => 'points']);
+
+// Reward user1 with 500 points for referral
+app('wallet')->credit($walletPoints1, 500, 'Referral Bonus',$user2meta);
+
+// Credit user1 with 500 cash
+app('wallet')->credit($walletCash1, 500, 'Initial Cash Credit',$user1meta);
+
+// Credit user2 with 100 cash
+app('wallet')->credit($walletCash2, 100, 'Initial Cash Credit',$user2meta);
+
+// User1 transfers 25 cash to user2
+app('wallet')->transfer($walletCash1, $walletCash2, 25, 'Cash Transfer',$user1meta);
 ```
 ---
 ### Benefits of This Approach
