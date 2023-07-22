@@ -1,18 +1,15 @@
-## Laravel Wallet Package
+# Laravel Wallet Package
 
-This package provides a **modular wallet and transaction system** for Laravel.
-Each wallet is **independent** (not directly linked to users) and supports:
-- Multiple wallet types (e.g. `cash`, `points`)
+**A modular and extensible wallet & transaction system for Laravel applications.** 
+This package is designed to work independently of the User model, making it highly adaptable to different business needs. It supports:
+- Multiple wallet types (e.g., `cash`, `points`)
 - Credit, debit, transfer, and rollback operations
 - UUID-based transaction references
-- Metadata for each transaction
+- Metadata logging for transactions
 - Soft-deletable transaction logs
-
+---
 ## Installation
-
 Here is a **step-by-step guide to install a custom package in Laravel**, whether it's a **local package**, a **private Git repo**, or a **custom path**.
-
-----------
 
 ###  Step 1: Organize Your Package Folder
 Create the directory:
@@ -25,9 +22,7 @@ packages/
 └── Haresh/
     └── Wallet/
 ```
-----------
 ### Step 2: Create `composer.json` for the Package
-
 Inside `packages/CustomVendor/CustomPackage/composer.json`:
 ```json
 {
@@ -41,13 +36,9 @@ Inside `packages/CustomVendor/CustomPackage/composer.json`:
   "require": {}
 }
 ```
-----------
 ###  Step 3: Register the Package in Your Laravel App
-
 In your **Laravel project's `composer.json`**, add:
-
 #### A. Add to `autoload.psr-4` (optional but helpful for IDEs)
-
 ```json
 "autoload": {
   "psr-4": {
@@ -65,14 +56,11 @@ In your **Laravel project's `composer.json`**, add:
   }
 ]
 ```
-----------
-
 ###  Step 4: Require the Package
 Run:
 ```bash
 composer require custom-vendor/custom-package:@dev
 ```
-----------
 ### Step 5: Register the Service Provider
 If not using Laravel auto-discovery, go to `config/app.php`:
 ```php
@@ -80,21 +68,13 @@ If not using Laravel auto-discovery, go to `config/app.php`:
     Haresh\Wallet\WalletServiceProvider::class,
 ],
 ```
-----------
-### Step 6: Dump Autoload
+### Step 6: Dump Autoload and Migrate wallet related tables in database
 Run:
 ```bash
 composer dump-autoload
-```
----------
-###  Step 7: Migrate wallet related tables in database
-
-Run:
-```bash
 php artisan migrate
 ```
-
-### Step 8: Add below method in app/Models/User.php
+### Step 7: Add below method in app/Models/User.php
 For associate wallet with users
 ```bash
 public function wallets()
@@ -102,21 +82,19 @@ public function wallets()
     return $this->belongsToMany(Wallet::class, 'user_wallets');
 }
 ```
-
-### Step 9: Add Reffered feature in User (Optional)
+### Step 8: Add Reffered feature in User (Optional)
 1. Add below method in app/Models/User.php
 ```bash
 /**
-  * User who referred this user.
-  */
+ * User who referred this user.
+ */
 public function referrer(): BelongsTo
 {
     return $this->belongsTo(User::class, 'referred_by');
 }
-
 /**
-  * Users referred by this user.
-  */
+ * Users referred by this user.
+ */
 public function referrals(): HasMany
 {
     return $this->hasMany(User::class, 'referred_by');
@@ -136,39 +114,36 @@ Run:
 ```bash
 php artisan make:migration add_referred_by_to_users_table
 ```
-Open database/migrations/xxx_xx_xx_xxxxx_add_referred_by_to_users_table.php and add below code under class
+Open `database/migrations/xxx_xx_xx_xxxxx_add_referred_by_to_users_table.php` and add below code under class
 ```bash
-
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
-    {
-        Schema::table('users', function (Blueprint $table) {
-            $table->foreignId('referred_by')
-                ->nullable()
-                ->constrained('users')
-                ->nullOnDelete(); // sets to NULL if referring user is deleted
-        });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropForeign(['referred_by']);
-            $table->dropColumn('referred_by');
-        });
-    }
+/**
+ * Run the migrations.
+ */
+public function up(): void
+{
+    Schema::table('users', function (Blueprint $table) {
+        $table->foreignId('referred_by')
+            ->nullable()
+            ->constrained('users')
+            ->nullOnDelete(); // sets to NULL if referring user is deleted
+    });
+}
+/**
+ * Reverse the migrations.
+ */
+public function down(): void
+{
+    Schema::table('users', function (Blueprint $table) {
+        $table->dropForeign(['referred_by']);
+        $table->dropColumn('referred_by');
+    });
+}
 ```
 Run:
 ```bash
 php artisan migrate
 ```
 ---
-
 #### Code Sample for how to use Wallet package
 ```php
 // Create user1
@@ -240,4 +215,4 @@ app('wallet')->transfer($walletCash1, $walletCash2, 25, 'Cash Transfer',$user1me
 ---
 ### Author
 **Haresh Vidja**
-Custom Laravel Wallet System for flexible financial management.
+Custom Laravel Wallet System for flexible financial and points management.
