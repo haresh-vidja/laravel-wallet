@@ -91,10 +91,85 @@ composer dump-autoload
 
 Run:
 ```bash
-php artisan migrate:fresh
+php artisan migrate
 ```
 
-#### Code Sample for
+### Step 8: Add below method in app/Models/User.php
+For associate wallet with users
+```bash
+public function wallets()
+{
+    return $this->belongsToMany(Wallet::class, 'user_wallets');
+}
+```
+
+### Step 9: Add Reffered feature in User (Optional)
+1. Add below method in app/Models/User.php
+```bash
+/**
+  * User who referred this user.
+  */
+public function referrer(): BelongsTo
+{
+    return $this->belongsTo(User::class, 'referred_by');
+}
+
+/**
+  * Users referred by this user.
+  */
+public function referrals(): HasMany
+{
+    return $this->hasMany(User::class, 'referred_by');
+}
+```
+2. Add `referred_by` under $fillable array in app/Models/User.php
+```bash
+protected $fillable = [
+  'name',
+  'email',
+  'password',
+  'referred_by' // add this in $fillable
+];
+```
+3. Add migration for apply change in users table in database for referred_by field
+Run:
+```bash
+php artisan make:migration add_referred_by_to_users_table
+```
+Open database/migrations/xxx_xx_xx_xxxxx_add_referred_by_to_users_table.php and add below code under class
+```bash
+
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('users', function (Blueprint $table) {
+            $table->foreignId('referred_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete(); // sets to NULL if referring user is deleted
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropForeign(['referred_by']);
+            $table->dropColumn('referred_by');
+        });
+    }
+```
+Run:
+```bash
+php artisan migrate
+```
+---
+
+#### Code Sample for how to use Wallet package
 ```php
 // Create user1
 $user1 = User::factory()->create([
